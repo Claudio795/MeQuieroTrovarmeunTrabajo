@@ -1,0 +1,16 @@
+{
+  "name": "publishers",
+  "version": "1.0.0",
+  "description": "nodes to test and deploy MQTT clients publishing data on HiveMQTT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "PManlio",
+  "license": "ISC",
+  "dependencies": {
+    "find-nearest-cities": "^1.0.0",
+    "mqtt": "^4.2.8",
+    "puppeteer": "^10.1.0"
+  }
+}
