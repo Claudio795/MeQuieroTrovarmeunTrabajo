@@ -1,0 +1,5 @@
+.idea
+.vscode
+telegram_bot/config.py
+telegram_bot/__pycache__
+telegram_bot/sample_pyMQTT.py
