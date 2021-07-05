@@ -1,6 +1,6 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('../node_modules/puppeteer');
 
-(async () => {
+const getJobLinks = async (qualification, zone) => {
     // lancia il browser e apre una nuova pagina
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
@@ -12,10 +12,10 @@ const puppeteer = require('puppeteer');
     // });
 
     // inseriamo il tipo di qualifica o azienda:
-    await page.type('.dismissable-input__input', '');
+    await page.type('.dismissable-input__input', `${qualification}`);
     await page.keyboard.press('Tab');
     // inseriamo la zona:
-    await page.type('.dismissable-input__input', 'Catania')
+    await page.type('.dismissable-input__input', `${zone}`)
     await page.keyboard.press('Enter');
 
     // aspettiamo la risposta e printiamo la nuova URL
@@ -28,19 +28,20 @@ const puppeteer = require('puppeteer');
         jobs.map(divHandler => divHandler.getProperty('href'))
     )
 
-    // i primi 25 link
+    // i primi 14 link
     let links = await Promise.all(
         jobsHandles.map(handle => handle.jsonValue())
     )
 
-    //console.log(links[0], links[1], links[2]);
-
-    let newLinks = [];
-    links.forEach(link => {
-        newLinks.push(link.toString());
-    });
-
-    console.log(newLinks, typeof(newLinks));
-    // END
+    // attendiamo la chiusura del browser
     await browser.close();
-})();
+
+    // returniamo i link
+    let stringLinks = [];
+    links.forEach(link => {
+        stringLinks.push(link.toString());
+    });
+    return stringLinks;
+}
+
+exports.getJobLinks = getJobLinks;
