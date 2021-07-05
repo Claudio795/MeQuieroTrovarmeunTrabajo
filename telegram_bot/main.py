@@ -1,4 +1,3 @@
-from collections import UserList
 import logging
 import os
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
@@ -7,9 +6,7 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     Filters,
-    ConversationHandler,
-    CallbackContext,
-    conversationhandler
+    ConversationHandler
 )
 from paho.mqtt.client import Client
 from telegram.message import Message
@@ -17,42 +14,47 @@ from telegram.update import Update
 
 from config import TOKEN
 
-LOCATION = range(4)
+LOCATION, JOB = range(2)
 
 # elenco funzioni del bot
 def start(update, context):
     #all'interno di questa funzione instaureremo la connessione al broker
     
-    reply_keyboard = [["/annulla"]]
-    update.message.reply_text('Bot avviato, inviami la tua posizione per cominciare',
-    reply_markup = ReplyKeyboardMarkup(
-        reply_keyboard, one_time_keyboard=True
-        ),
-    )
+    update.message.reply_text('Bot avviato, che lavoro stai cercando?')
+    return JOB
+
+# funzione per aggiungere il lavoro per cui ricevere aggiornamenti
+def get_job(update, context):
+    user = update.message.from_user["first_name"]
+    job = update.message.text
+    print(f"{user} sta cercando un posto per {job}")
+    update.message.reply_text(f'Grazie {user}, inviami ora la posizione in cui effettuare la ricerca')
     return LOCATION
 
-#funzione per richiedere un aggiornamento della posizione tramite comando 
+# funzione per richiedere un aggiornamento della posizione tramite comando 
 def location(update, context):
     user = update.message.from_user["first_name"]
     user_location = update.message.location
-    update.message.reply_text("Nuova posizione ricevuta")
+    update.message.reply_text(
+        "Nuova posizione ricevuta",
+        reply_markup=ReplyKeyboardRemove())
+
     print(f"Coordinate di {user}: LAT: {user_location.latitude}, LONG: {user_location.longitude}")
     return ConversationHandler.END
 
-# funzione per aggiornare la posizione
-def update_location(update, context):
+# funzione per aggiornare posizione è lavoro
+def update_info(update, context):
     user = update.message.from_user["first_name"]
     reply_keyboard = [["/annulla"]]
-    update.message.reply_text(f'Ok {user}, inviami la tua nuova posizione',
+    update.message.reply_text(f'Ok {user}, inviami il nuovo lavoro richiesto',
     reply_markup = ReplyKeyboardMarkup(
         reply_keyboard, one_time_keyboard=True
         ),
     )
-    return LOCATION
+    return JOB
 
 # funzione per annullare un comando 
 def cancel(update, context):
-    #user = update.message.from_user
     update.message.reply_text("Operazione annullata.")
     return ConversationHandler.END
 
@@ -69,21 +71,29 @@ def main():
     start_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states= {
-            LOCATION: [MessageHandler(Filters.location, location)]
+            LOCATION: [MessageHandler(Filters.location, location)],
+            JOB: [MessageHandler(Filters.text, get_job)]
         },
         fallbacks=[CommandHandler("annulla", cancel)]
         )
 
-    location_handler = ConversationHandler(
-        entry_points=[CommandHandler("aggiorna_posizione", update_location)],
+    update_handler = ConversationHandler(
+        entry_points=[CommandHandler("aggiorna_informazioni", update_info)],
         states= {
-            LOCATION: [MessageHandler(Filters.location, location)]
+            LOCATION: [
+                MessageHandler(Filters.location, location),
+                CommandHandler("annulla", cancel)
+                ],
+            JOB: [
+                MessageHandler(Filters.text & ~Filters.command, get_job),
+                # CommandHandler("annulla", cancel)
+                ]
         },
         fallbacks=[CommandHandler("annulla", cancel)]
     )
 
     disp.add_handler(start_handler)
-    disp.add_handler(location_handler)
+    disp.add_handler(update_handler)
 
     # avvio del bot, resta in esecuzione fino ad quando non
     #riceve un CTRL+C, SIGTERM O SIGABRT
