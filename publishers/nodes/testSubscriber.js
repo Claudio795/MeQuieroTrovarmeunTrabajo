@@ -14,7 +14,7 @@ client.on('connect', () => console.log('Connected'));
 client.on('error', err => console.log(err));
 
 // subscription al topic /node/jobs
-const topicName = '/node/jobs'; 
+const topicName = 'node/jobs'; 
 client.subscribe(topicName, { qos: 2 }, () => {
     console.log(`Subscribed to topic: ${topicName}`);
 });
