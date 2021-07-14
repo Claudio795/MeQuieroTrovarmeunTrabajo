@@ -13,49 +13,52 @@ from telegram.ext import (
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import Client
 
-from config import TOKEN, USERNAME, PASSWORD
+from config import TOKEN, USERNAME, PASSWORD, TOPICS
 
 LOCATION, JOB, SENDVALUES = range(3)
 
 # -------------------------------------------- CLASSE CLIENT MQTT ----------------------------------------------------------
 class MQTTClient(object):
-    def __init__(self, username, password, my_queue):
+    def __init__(self, username, password, topics, my_queues):
         self.username = username
         self.password = password
-        self.queue = my_queue
+        self.queues = my_queues
+        self.topics = topics
+        self.client = Client(client_id="telegram_client")
         thread0 = Thread(target=self.run, args=())
         thread0.start()
 
     def run(self):
-        client = Client(client_id="telegram_client")
-        client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
-        client.username_pw_set(username=USERNAME, password=PASSWORD)
+        self.client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
+        self.client.username_pw_set(username=USERNAME, password=PASSWORD)
 
-        client.connect(host="2de97254567d4bff9dd9184c3910ace3.s1.eu.hivemq.cloud", port=8883)
-        client.on_connect = self.mqtt_connect
-        client.subscribe('node/jobs')
+        self.client.connect(host="2de97254567d4bff9dd9184c3910ace3.s1.eu.hivemq.cloud", port=8883)
+        self.client.on_connect = self.mqtt_connect
+        for topic in self.topics:
+            self.client.subscribe(topic)
         
-        client.on_message = self.mqtt_onmessage
+        self.client.on_message = self.mqtt_onmessage
 
-        client.loop_forever()
+        self.client.loop_forever()
 
     def mqtt_connect(self, broker, userdata, flags, rc):
         print(f"MQTT: connesso al broker, result code: {str(rc)}")
 
     def mqtt_onmessage(self, client, userdata, msg):
-        # time.sleep(1)
         payload = msg.payload.decode("utf-8")
-        self.queue.put(payload)
-        #print("Messaggio ricevuto: " + msg.topic + " -> " + payload)
+        queue = self.queues[msg.topic]
+        queue.put(payload)
         print("Messaggio ricevuto dal topic: " + msg.topic)
-        # return payload
+
+    def publish(self, topic, payload):
+        self.client.publish(topic=topic, payload=payload)
 
 # -------------------------------------------- CLASSE BOT TELEGRAM ----------------------------------------------------------
 class TelegramBot(object):
-    def __init__(self, token, client, my_queue):
+    def __init__(self, token, client, my_queues):
         self.token = token
         self.client = client
-        self.queue = my_queue
+        self.queues = my_queues
         thread1 = Thread(target=self.run, args=())
         # thread1.daemon = True
         thread1.start()
@@ -72,7 +75,7 @@ class TelegramBot(object):
         job = update.message.text
         # salvo il lavoro scelto per passarlo alle funzioni successive
         context.user_data['qualification'] = job
-        print(f"{user.first_name} sta cercando un posto per {job}")
+        # print(f"{user.first_name} sta cercando un posto per {job}")
 
         update.message.reply_text(f'Grazie {user.first_name}, inviami ora la posizione in cui effettuare la ricerca')
         return LOCATION
@@ -82,14 +85,14 @@ class TelegramBot(object):
         user = update.message.from_user
         user_location = update.message.location
         update.message.reply_text(
-            "Nuova posizione ricevuta",
+           # "Nuova posizione ricevuta",
             reply_markup=ReplyKeyboardRemove())
 
         # inserisco le coordinate nella queue
         context.user_data['lat'] = user_location.latitude
         context.user_data['lon'] = user_location.longitude
 
-        print(f"Coordinate di {user.first_name}: LAT: {user_location.latitude}, LONG: {user_location.longitude}")
+        # print(f"Coordinate di {user.first_name}: LAT: {user_location.latitude}, LONG: {user_location.longitude}")
         reply_keyboard = [
                             ["Si"],
                             ["/annulla"]
@@ -109,7 +112,7 @@ class TelegramBot(object):
 
         payload = context.user_data
         str_payload = json.dumps(payload)
-        print(str_payload)      # test
+        # print(str_payload)
         self.client.publish(topic="user/info", payload=str_payload)
 
         update.message.reply_text(
@@ -140,7 +143,38 @@ class TelegramBot(object):
     # Comando per visualizzare i link dei lavori disponibili -----------------------------------------------------------------
 
     def job_message(self, update, context):
-        payload = self.queue.get()
+        job_queue = self.queues['node/jobs']
+        payload = job_queue.get()
+        if len(payload) > 4096:
+            list_payload = payload.split("\n\n")
+            for x in range(0, len(list_payload), 5):
+                str_payload = '\n\n'.join([str(item) for item in list_payload[x:x+5]])
+                update.message.reply_text(str_payload)
+        else:
+            update.message.reply_text(payload)
+
+    # Comando per visualizzare il meteo locale -------------------------------------------------------------------------------
+
+    def weather_message(self, update, context):
+        weather_queue = self.queues['node/weather']
+        payload = weather_queue.get()
+
+        # TODO: modificare a seconda del messaggio che ricevo
+        if len(payload) > 4096:
+            list_payload = payload.split("\n\n")
+            for x in range(0, len(list_payload), 5):
+                str_payload = '\n\n'.join([str(item) for item in list_payload[x:x+5]])
+                update.message.reply_text(str_payload)
+        else:
+            update.message.reply_text(payload)
+
+    # Comando per visualizzare i link dei lavori disponibili -----------------------------------------------------------------
+
+    def news_message(self, update, context):
+        news_queue = self.queues['node/news']
+        payload = news_queue.get()
+
+        # TODO: modificare a seconda del messaggio che ricevo
         if len(payload) > 4096:
             list_payload = payload.split("\n\n")
             for x in range(0, len(list_payload), 5):
@@ -182,10 +216,15 @@ class TelegramBot(object):
         )
 
         job_handler = CommandHandler("lavori", self.job_message)
+        weather_handler = CommandHandler("meteo", self.weather_message)
+        news_handler = CommandHandler("news", self.news_message)
 
         self.disp.add_handler(start_handler)
         self.disp.add_handler(update_handler)
+
         self.disp.add_handler(job_handler)
+        self.disp.add_handler(weather_handler)
+        self.disp.add_handler(news_handler)
 
         # avvio del bot, resta in esecuzione fino ad quando non
         #riceve un CTRL+C, SIGTERM O SIGABRT
@@ -194,12 +233,15 @@ class TelegramBot(object):
 # ------------------------------------------- MAIN -----------------------------------------------------------------------
 def main():
 
-    #global client
-    my_queue = Queue()
+    dict_queues = {}
+
+    for topic in TOPICS:
+        queue = Queue()
+        dict_queues[topic] = queue
 
 
-    client = MQTTClient(USERNAME, PASSWORD, my_queue)
-    bot = TelegramBot(TOKEN, client, my_queue)
+    client = MQTTClient(USERNAME, PASSWORD, dict_queues)
+    bot = TelegramBot(TOKEN, client, dict_queues)
 
     # avvio del bot
 
