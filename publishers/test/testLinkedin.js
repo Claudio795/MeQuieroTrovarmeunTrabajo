@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('../node_modules/puppeteer');
 
 (async () => {
     // lancia il browser e apre una nuova pagina

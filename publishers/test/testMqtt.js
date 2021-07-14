@@ -1,12 +1,5 @@
-var mqtt = require('mqtt')
-
-var options = {
-    host: '2de97254567d4bff9dd9184c3910ace3.s1.eu.hivemq.cloud',
-    port: 8883,
-    protocol: 'mqtts',
-    username: 'iotProject',
-    password: 'unTrabaj0'
-}
+var mqtt = require('../node_modules/mqtt');
+const options = require('../brokerConnectionEnv');
 
 //initialize the MQTT client
 var client = mqtt.connect(options);
