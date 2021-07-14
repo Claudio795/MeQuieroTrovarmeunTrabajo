@@ -1,16 +1,9 @@
 const mqtt = require('mqtt');
+const mqttOptions = require('../brokerConnectionEnv');
 const linkedinScraper = require('../services/linkedinScraper');
 const getNearestCity = require('../services/nearestCity').getNearestCity;
 
-let options = {
-    host: '2de97254567d4bff9dd9184c3910ace3.s1.eu.hivemq.cloud',
-    port: 8883,
-    protocol: 'mqtts',
-    username: 'iotProject',
-    password: 'unTrabaj0'
-}
-
-let client = mqtt.connect(options);
+let client = mqtt.connect(mqttOptions);
 
 client.on('connect', () => console.log('Connected'));
 client.on('error', err => console.log(err));
