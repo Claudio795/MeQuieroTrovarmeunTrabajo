@@ -4,12 +4,15 @@
   "description": "nodes to test and deploy MQTT clients publishing data on HiveMQTT",
   "main": "index.js",
   "scripts": {
+    "start": "node nodes/linkedinPublisher && node nodes/weatherPublisher",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "PManlio",
   "license": "ISC",
   "dependencies": {
+    "cron": "^1.8.2",
     "find-nearest-cities": "^1.0.0",
+    "google-news-json": "^2.0.4",
     "mqtt": "^4.2.8",
     "puppeteer": "^10.1.0",
     "unirest": "^0.6.0"

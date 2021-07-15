@@ -1,4 +1,4 @@
-const mqtt = require('mqtt');
+const mqtt = require('../node_modules/mqtt');
 const mqttOptions = require('../brokerConnectionEnv');
 const linkedinScraper = require('../services/linkedinScraper');
 const getNearestCity = require('../services/nearestCity').getNearestCity;

@@ -1,7 +1,6 @@
-const mqtt = require('mqtt');
+const mqtt = require('../node_modules/mqtt');
 const mqttOptions = require('../brokerConnectionEnv');
 const getWeather = require('../services/weather');
-const getNearestCity = require('../services/nearestCity').getNearestCity;
 
 let client = mqtt.connect(mqttOptions);
 
@@ -16,9 +15,7 @@ client.on('message', async (topic, msg) => {
     let lat = parseFloat(parsedMsg.lat) + 0.00000001;
     let lon = parseFloat(parsedMsg.lon) + 0.00000001;
 
-    let city = await getNearestCity(lat, lon);
-
-    getWeather(city).then(weatherInfo => {
+    getWeather(lat, lon).then(weatherInfo => {
         client.publish('node/weather',
             Buffer.from(`Ecco il meteo:\r\n${weatherInfo.join('\r\n\n')}`),
             { qos: 2 },
@@ -28,10 +25,11 @@ client.on('message', async (topic, msg) => {
 });
 
 
+/** TEST
 // sottoscrizione al topic /user/info -> nome del topic modificabile a piacere
 client.subscribe('user/info');
 client.subscribe('node/weather');
-
+*/
 
 /** Esempio:
 setTimeout(() => {
