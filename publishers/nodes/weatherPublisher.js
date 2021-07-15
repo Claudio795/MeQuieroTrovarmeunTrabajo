@@ -29,6 +29,10 @@ client.subscribe('user/info');
 
 /** TEST
 client.subscribe('node/weather');
+client.on('message', function (topic, message) {
+    //Called each time a message is received
+    console.log('Received message:', topic, message.toString());
+});
 */
 
 /** Esempio:
