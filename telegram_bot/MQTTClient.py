@@ -3,8 +3,6 @@ from threading import Thread
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import Client
 
-from config import USERNAME, PASSWORD
-
 
 # -------------------------------------------- CLASSE CLIENT MQTT ----------------------------------------------------------
 class MQTTClient(object):
@@ -19,7 +17,7 @@ class MQTTClient(object):
 
     def run(self):
         self.client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
-        self.client.username_pw_set(username=USERNAME, password=PASSWORD)
+        self.client.username_pw_set(username=self.username, password=self.password)
 
         self.client.connect(host="2de97254567d4bff9dd9184c3910ace3.s1.eu.hivemq.cloud", port=8883)
         self.client.on_connect = self.mqtt_connect

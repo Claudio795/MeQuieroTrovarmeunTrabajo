@@ -48,7 +48,6 @@ class TelegramBot(object):
            "Nuova posizione ricevuta",
             reply_markup=ReplyKeyboardRemove())
 
-        # inserisco le coordinate nella queue
         context.user_data['lat'] = user_location.latitude
         context.user_data['lon'] = user_location.longitude
 
