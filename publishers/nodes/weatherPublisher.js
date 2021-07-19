@@ -18,7 +18,7 @@ client.on('message', async (topic, msg) => {
     getWeather(lat, lon).then(weatherInfo => {
         client.publish('node/weather',
             Buffer.from(`Ecco il meteo:\r\n${weatherInfo.join('\r\n\n')}`),
-            { qos: 2 },
+            { qos: 1 },
             console.log("weather msg published.")
         )
     });

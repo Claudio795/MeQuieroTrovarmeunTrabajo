@@ -25,7 +25,7 @@ client.on('message', async (topic, msg) => {
     .then(links => {
         client.publish('node/jobs',
             Buffer.from(`Ecco i nuovi lavori:\r\n${links.join('\r\n\n')}`),
-            { qos: 2 },
+            { qos: 1 },
             console.log("msg published.")
         )
     })
