@@ -10,7 +10,7 @@ const job = new CronJob('0 */1 * * * *', async () => {
     let news = await getNews();
     client.publish('node/news',
         Buffer.from(`Ecco le notizie:\r\n${news.join('\r\n\n')}`),
-        { qos: 1, retain: true },
+        { qos: 2, retain: true },
         console.log("news msg published.")
     )
 });
