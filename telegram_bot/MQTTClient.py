@@ -38,4 +38,4 @@ class MQTTClient(object):
         print("Messaggio ricevuto dal topic: " + msg.topic)
 
     def publish(self, topic, payload):
-        self.client.publish(topic=topic, payload=payload)
+        self.client.publish(topic=topic, payload=payload, qos=2)
