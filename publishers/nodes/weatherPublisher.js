@@ -23,7 +23,7 @@ client.on('message', async (topic, msg) => {
         )
     });
 });
-// sottoscrizione al topic user/info -> nome del topic modificabile a piacere
+// sottoscrizione al topic user/position -> nome del topic modificabile a piacere
 client.subscribe('user/position');
 
 
