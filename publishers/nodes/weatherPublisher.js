@@ -23,8 +23,8 @@ client.on('message', async (topic, msg) => {
         )
     });
 });
-// sottoscrizione al topic /user/info -> nome del topic modificabile a piacere
-client.subscribe('user/info');
+// sottoscrizione al topic user/info -> nome del topic modificabile a piacere
+client.subscribe('user/position');
 
 
 /** TEST

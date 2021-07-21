@@ -5,8 +5,8 @@ const CronJob = require('../node_modules/cron').CronJob;
 
 let client = mqtt.connect(mqttOptions);
 
-// TODO: CronJob per ora è 1 messaggio ogni minuto; da cambiare con "ogni 4 ore" (= 240 minuti)
-const job = new CronJob('0 */1 * * * *', async () => {
+// TODO: CronJob per ora è un messaggio ogni 20 minuti; da cambiare con "ogni 4 ore" (= 240 minuti)
+const job = new CronJob('0 */20 * * * *', async () => {
     let news = await getNews();
     client.publish('node/news',
         Buffer.from(`Ecco le notizie:\r\n${news.join('\r\n\n')}`),
