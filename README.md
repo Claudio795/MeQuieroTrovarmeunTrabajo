@@ -24,3 +24,4 @@ Scopo del progetto è quello di realizzare un assistente virtuale personale tram
 ![diagramma ideazione](/imgs/SombreroDiagram.png)
 
 ## Descrizione
+È possibile trovare la relazione [qui, in formato PDF](https://github.com/PManlio/MeQuieroTrovarmeunTrabajo/blob/main/relazione/Relazione%20IoT.pdf) oppure [qui, nella Wiki](https://github.com/PManlio/MeQuieroTrovarmeunTrabajo/wiki/Relazione). 
