@@ -1,5 +1,6 @@
 import json
 from threading import Thread
+from time import sleep
 
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -11,7 +12,7 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-LOCATION, JOB, SENDVALUES = range(3)
+LOCATION, JOB, SENDVALUES, SENDLOC = range(4)
 
 # -------------------------------------------- CLASSE BOT TELEGRAM ----------------------------------------------------------
 class TelegramBot(object):
@@ -113,19 +114,37 @@ class TelegramBot(object):
             update.message.reply_text(payload)
 
     # Comando per visualizzare il meteo locale -------------------------------------------------------------------------------
+    def weather(self, update, context):
+        reply_keyboard = [["/annulla"]]
+        update.message.reply_text('Mandami la posizione interessata',
+        reply_markup = ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True
+            ),
+        )
+        return SENDLOC
 
-    def weather_message(self, update, context):
+    def send_location(self, update, context):
+        user_location = update.message.location
+
+        context.user_data['lat'] = user_location.latitude
+        context.user_data['lon'] = user_location.longitude
+
+        pub_payload = context.user_data
+        str_payload = json.dumps(pub_payload)
+
+        self.client.publish(topic="user/position", payload=str_payload)
+
+        update.message.reply_text('Posizione inviata, ti invio il meteo locale:',
+        reply_markup=ReplyKeyboardRemove())
+
+        sleep(2)
         weather_queue = self.queues['node/weather']
-        payload = weather_queue.get()
+        rec_payload = weather_queue.get()
 
-        # TODO: modificare a seconda del messaggio che ricevo
-        if len(payload) > 4096:
-            list_payload = payload.split("\n\n")
-            for x in range(0, len(list_payload), 5):
-                str_payload = '\n\n'.join([str(item) for item in list_payload[x:x+5]])
-                update.message.reply_text(str_payload)
-        else:
-            update.message.reply_text(payload)
+        update.message.reply_text(rec_payload)
+
+        #return RECWEATHER
+        return ConversationHandler.END
 
     # Comando per visualizzare le news ogni mattina --------------------------------------------------------------------------
 
@@ -176,8 +195,19 @@ class TelegramBot(object):
             fallbacks=[CommandHandler("annulla", self.cancel)]
         )
 
+        # weather_handler = CommandHandler("meteo", self.weather_message)
+        weather_handler = ConversationHandler(
+            entry_points=[CommandHandler("meteo", self.weather)], 
+            states= {
+                SENDLOC: [
+                    MessageHandler(Filters.location, self.send_location),
+                    CommandHandler("annulla", self.cancel)
+                ]
+            },
+            fallbacks=[CommandHandler("annulla", self.cancel)]
+        )
+
         job_handler = CommandHandler("lavori", self.job_message)
-        weather_handler = CommandHandler("meteo", self.weather_message)
         news_handler = CommandHandler("news", self.news_message)
 
         self.disp.add_handler(start_handler)
